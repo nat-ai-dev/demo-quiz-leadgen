@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Квиз: сколько вы сэкономите на AI-автоматизации</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --accent: #8b5cf6;
+      --text: #1f2937;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: #ffffff;
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* мягкий градиентный фон-подложка */
+    .app-bg {
+      background:
+        radial-gradient(900px 600px at 85% -10%, rgba(139, 92, 246, 0.10), transparent 60%),
+        radial-gradient(700px 500px at 0% 110%, rgba(139, 92, 246, 0.08), transparent 55%),
+        #ffffff;
+    }
+    .card {
+      border-radius: 16px;
+      box-shadow: 0 20px 45px -18px rgba(31, 41, 55, 0.25), 0 6px 16px -8px rgba(31, 41, 55, 0.12);
+    }
+    /* плавная анимация появления вопроса */
+    .anim-enter {
+      animation: slideIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(28px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .anim-fade {
+      animation: fadeIn 0.5s ease both;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .option-btn {
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    .option-btn:hover { transform: translateY(-2px); }
+    .option-btn:active { transform: translateY(0); }
+    /* кнопка прогресса /
+    progress bar fill transition handled inline */
+    .progress-fill { transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+    /* pulse на акцентной кнопке результата */
+    .pulse {
+      animation: pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.35); }
+      50% { box-shadow: 0 0 0 14px rgba(139, 92, 246, 0); }
+    }
+  </style>
+</head>
+<body class="app-bg min-h-screen">
+  <div class="min-h-screen flex items-center justify-center px-4 py-10">
+    <div class="w-full max-w-xl">
+
+      <!-- ШАПКА -->
+      <header class="text-center mb-8">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-50 border border-violet-100 text-violet-600 text-xs font-semibold tracking-wide uppercase">
+          <span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
+          AI-Автоматизация
+        </div>
+        <h1 class="mt-4 text-2xl sm:text-3xl font-bold leading-tight text-[#1f2937]">
+          Сколько денег ваш бизнес сэкономит на внедрении AI-автоматизации?
+        </h1>
+        <p class="mt-2 text-gray-500 text-sm sm:text-base">
+          Ответьте на 5 коротких вопросов и получите персональный расчёт экономии
+        </p>
+      </header>
+
+      <!-- ПРОГРЕСС -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between text-sm mb-2">
+          <span id="stepLabel" class="font-semibold text-[#1f2937]">Вопрос 1 из 5</span>
+          <span id="stepPercent" class="text-gray-400 font-medium">20%</span>
+        </div>
+        <div class="h-2.5 w-full rounded-full bg-gray-100 overflow-hidden">
+          <div id="progressFill" class="progress-fill h-full rounded-full bg-violet-500" style="width:20%"></div>
+        </div>
+      </div>
+
+      <!-- ОСНОВНОЙ БЛОК -->
+      <main id="app" class="card bg-white p-6 sm:p-8">
+        <!-- контент рендерится в JS -->
+      </main>
+
+      <p class="text-center text-xs text-gray-400 mt-6">Ваши данные защищены. Никакого спама — только расчёт.</p>
+    </div>
+  </div>
+
+  <script>
+    // ===== ДАННЫЕ ОПРОСА =====
+    const QUESTIONS = [
+      {
+        key: 'employees',
+        question: 'Сколько сотрудников в вашей компании?',
+        options: [
+          { label: '1–5',        value: 25 },
+          { label: '6–20',       value: 60 },
+          { label: '21–50',      value: 120 },
+          { label: '50+',        value: 220 },
+        ]
+      },
+      {
+        key: 'hours',
+        question: 'Сколько часов в неделю тратится на рутинные задачи?',
+        options: [
+          { label: 'До 10 ч',  value: 8  },
+          { label: '10–30 ч',  value: 20 },
+          { label: '30–50 ч',  value: 38 },
+          { label: '50+ ч',    value: 60 },
+        ]
+      },
+      {
+        key: 'check',
+        question: 'Какой у вас средний чек?',
+        options: [
+          { label: 'До 5 000 ₽',           value: 12 },
+          { label: '5 000 – 20 000 ₽',      value: 25 },
+          { label: '20 000 – 100 000 ₽',    value: 45 },
+          { label: '100 000+ ₽',            value: 80 },
+        ]
+      },
+      {
+        key: 'automation',
+        question: 'Используете ли вы сейчас какие-то инструменты автоматизации?',
+        options: [
+          { label: 'Нет',            value: 1.0  },
+          { label: 'Частично',       value: 0.7  },
+          { label: 'Да, активно',    value: 0.45 },
+        ]
+      },
+      {
+        key: 'sphere',
+        question: 'Какая у вас сфера бизнеса?',
+        options: [
+          { label: 'Услуги',       value: 1.0  },
+          { label: 'E-commerce',   value: 1.15 },
+          { label: 'Производство', value: 0.9  },
+          { label: 'Другое',       value: 0.85 },
+        ]
+      },
+    ];
+
+    const state = { answers: [], step: 0, total: QUESTIONS.length };
+    const app = document.getElementById('app');
+    const progressFill = document.getElementById('progressFill');
+    const stepLabel = document.getElementById('stepLabel');
+    const stepPercent = document.getElementById('stepPercent');
+
+    // ===== ФОРМАТИРОВАНИЕ ЧИСЛА (пробелы-разделители) =====
+    function formatMoney(n) {
+      return Math.round(n / 1000) * 1000
+        .toString()
+        .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+
+    // ===== ПЕРЕЗАПУСК АНИМАЦИИ =====
+    function reanimate(el, cls) {
+      el.classList.remove(cls);
+      void el.offsetWidth; // reflow, чтобы анимация перезапустилась
+      el.classList.add(cls);
+    }
+
+    // ===== ПРОГРЕСС =====
+    function updateProgress() {
+      const pct = Math.round((state.step / state.total) * 100);
+      const shown = Math.min(state.step + 1, state.total);
+      stepLabel.textContent = 'Вопрос ' + shown + ' из ' + state.total;
+      stepPercent.textContent = pct + '%';
+      progressFill.style.width = pct + '%';
+    }
+
+    // ===== РЕНДЕР ВОПРОСА =====
+    function renderQuestion() {
+      const q = QUESTIONS[state.step];
+      const wrapper = document.createElement('div');
+      wrapper.className = 'anim-enter';
+
+      let optionsHtml = q.options.map((opt, i) => `
+        <button type="button"
+          data-value="${opt.value}"
+          data-idx="${i}"
+          class="option-btn w-full text-left flex items-center justify-between gap-3 px-5 py-4 rounded-xl border border-gray-200 bg-white text-[#1f2937] font-medium hover:border-violet-400 hover:bg-violet-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
+          <span>${opt.label}</span>
+          <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      `).join('');
+
+      wrapper.innerHTML = `
+        <h2 class="text-lg sm:text-xl font-bold text-[#1f2937] mb-6 leading-snug">${q.question}</h2>
+        <div class="grid gap-3">${optionsHtml}</div>
+      `;
+
+      // очистка и подстановка
+      app.innerHTML = '';
+      app.appendChild(wrapper);
+      reanimate(wrapper, 'anim-enter');
+
+      // клики по вариантам
+      wrapper.querySelectorAll('.option-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const value = parseFloat(btn.dataset.value);
+          state.answers[state.step] = value;
+          // подсветить выбранный для плавности
+          btn.classList.add('bg-violet-500', 'text-white', 'border-violet-500');
+          btn.querySelector('svg').classList.add('text-white');
+
+          // короткая задержка для визуального отклика, затем переход
+          setTimeout(() => {
+            state.step++;
+            if (state.step < state.total) {
+              updateProgress();
+              renderQuestion();
+            } else {
+              updateProgress();
+              renderEmailForm();
+            }
+          }, 220);
+        });
+      });
+    }
+
+    // ===== ФОРМА EMAIL =====
+    function renderEmailForm() {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'anim-enter text-center';
+
+      wrapper.innerHTML = `
+        <div class="mx-auto w-14 h-14 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center mb-5">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.9 5.26a2 2 0 002.2 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <h2 class="text-xl sm:text-2xl font-bold text-[#1f2937] mb-2">Почти готово!</h2>
+        <p class="text-gray-500 mb-6">Введите email, чтобы получить персональный расчёт экономии</p>
+        <form id="emailForm" class="space-y-3">
+          <input id="emailInput" type="email" required placeholder="ваш@email.ru"
+            class="w-full px-5 py-4 rounded-xl border border-gray-200 text-[#1f2937] placeholder-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus:border-violet-400" />
+          <button type="submit"
+            class="w-full px-5 py-4 rounded-xl bg-violet-500 hover:bg-violet-600 text-white font-semibold text-base transition-colors">
+            Получить результат
+          </button>
+        </form>
+      `;
+
+      app.innerHTML = '';
+      app.appendChild(wrapper);
+      reanimate(wrapper, 'anim-enter');
+
+      const form = wrapper.querySelector('#emailForm');
+      const input = wrapper.querySelector('#emailInput');
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = input.value.trim();
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          input.classList.add('border-red-400');
+          input.focus();
+          return;
+        }
+        input.classList.remove('border-red-400');
+        renderResult();
+      });
+    }
+
+    // ===== РЕЗУЛЬТАТ =====
+    function calculateSavings() {
+      const [employees, hours, check, automation, sphere] = state.answers;
+      // упрощённая формула: масштаб × часы × чек × фактор автоматизации × сфера
+      const monthly = employees * hours * check * automation * sphere;
+      return { monthly, employees, hours, check, automation, sphere };
+    }
+
+    function renderResult() {
+      const { monthly, automation } = calculateSavings();
+      const formatted = formatMoney(monthly);
+
+      const autFactorText = automation === 1.0
+        ? 'Вы не используете автоматизацию — потенциал максимальный.'
+        : automation === 0.7
+          ? 'Вы частично автоматизированы — есть простор для роста.'
+          : 'Автоматизация уже внедрена — найдём точечные точки роста.';
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'anim-fade text-center';
+
+      wrapper.innerHTML = `
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-50 border border-violet-100 text-violet-600 text-xs font-semibold uppercase tracking-wide mb-6">
+          Ваш результат
+        </div>
+
+        <h2 class="text-gray-500 text-sm font-medium mb-1">Ваша потенциальная экономия</h2>
+        <div class="my-2">
+          <span class="text-4xl sm:text-5xl font-extrabold text-violet-600 tracking-tight">${formatted} ₽</span>
+          <span class="block text-gray-400 text-sm mt-1">в месяц</span>
+        </div>
+
+        <div class="mt-6 bg-gray-50 rounded-xl p-5 text-left text-sm text-gray-600 space-y-2">
+          <p class="font-semibold text-[#1f2937] mb-1">Как считали:</p>
+          <p>• Учитываем численность команды, объём рутинных задач и средний чек.</p>
+          <p>• Чем больше рутины и масштаб бизнеса — тем выше потенциальная экономия.</p>
+          <p>• ${autFactorText}</p>
+        </div>
+
+        <button type="button"
+          class="pulse mt-7 w-full px-5 py-4 rounded-xl bg-violet-500 hover:bg-violet-600 text-white font-semibold text-base transition-colors">
+          Получить консультацию
+        </button>
+        <button type="button" id="restart"
+          class="mt-3 w-full px-5 py-3 rounded-xl text-gray-500 hover:text-[#1f2937] text-sm font-medium transition-colors">
+          Пройти заново
+        </button>
+      `;
+
+      app.innerHTML = '';
+      app.appendChild(wrapper);
+      reanimate(wrapper, 'anim-fade');
+
+      wrapper.querySelector('#restart').addEventListener('click', () => resetQuiz());
+    }
+
+    // ===== СБРОС =====
+    function resetQuiz() {
+      state.answers = [];
+      state.step = 0;
+      updateProgress();
+      renderQuestion();
+    }
+
+    // ===== СТАРТ =====
+    updateProgress();
+    renderQuestion();
+  </script>
+</body>
+</html>
